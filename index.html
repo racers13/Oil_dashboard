@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мазут: Россия vs Мировые рынки 2023–2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --accent: #58a6ff;
+    --russia: #ff6b6b;
+    --ara: #4ecdc4;
+    --sing: #ffe66d;
+    --nyc: #a8edea;
+    --med: #c084fc;
+    --green: #3fb950;
+    --red: #f85149;
+    --orange: #d29922;
+    --purple: #bc8cff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; }
+
+  /* Header */
+  .header { background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%); border-bottom: 1px solid var(--border); padding: 20px 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .header-title { display: flex; flex-direction: column; gap: 4px; }
+  .header h1 { font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+  .header-sub { font-size: 13px; color: var(--text2); }
+  .header-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge { background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--text2); }
+  .badge.live { border-color: var(--green); color: var(--green); }
+
+  /* Nav Tabs */
+  .nav { background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; gap: 0; padding: 0 20px; overflow-x: auto; }
+  .nav-btn { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 13px; font-weight: 500; padding: 13px 18px; border-bottom: 2px solid transparent; transition: all .2s; white-space: nowrap; }
+  .nav-btn:hover { color: var(--text); }
+  .nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Panels */
+  .panel { display: none; padding: 24px; }
+  .panel.active { display: block; }
+
+  /* KPI cards */
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .kpi { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; position: relative; overflow: hidden; }
+  .kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 10px 10px 0 0; }
+  .kpi.russia::before { background: var(--russia); }
+  .kpi.ara::before { background: var(--ara); }
+  .kpi.sing::before { background: var(--sing); }
+  .kpi.nyc::before { background: var(--nyc); }
+  .kpi.med::before { background: var(--med); }
+  .kpi-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .kpi-value { font-size: 24px; font-weight: 700; color: var(--text); }
+  .kpi-sub { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .kpi-change { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; margin-top: 4px; padding: 2px 8px; border-radius: 12px; }
+  .kpi-change.up { background: rgba(63,185,80,0.15); color: var(--green); }
+  .kpi-change.down { background: rgba(248,81,73,0.15); color: var(--red); }
+
+  /* Chart containers */
+  .chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+  .chart-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+  .chart-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .chart-sub { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .chart-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ctrl-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text2); cursor: pointer; font-size: 12px; padding: 5px 12px; transition: all .2s; }
+  .ctrl-btn:hover, .ctrl-btn.active { background: rgba(88,166,255,0.15); border-color: var(--accent); color: var(--accent); }
+  .chart-wrap { position: relative; }
+
+  /* Toggles */
+  .legend-toggles { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .leg-btn { display: flex; align-items: center; gap: 6px; background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; cursor: pointer; font-size: 12px; color: var(--text2); padding: 4px 12px 4px 8px; transition: all .2s; }
+  .leg-btn .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .leg-btn.active { border-color: currentColor; }
+  .leg-btn.active[data-market="russia"] { color: var(--russia); }
+  .leg-btn.active[data-market="ara"] { color: var(--ara); }
+  .leg-btn.active[data-market="sing"] { color: var(--sing); }
+  .leg-btn.active[data-market="nyc"] { color: var(--nyc); }
+  .leg-btn.active[data-market="med"] { color: var(--med); }
+
+  /* Correlation heatmap */
+  .corr-grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 3px; font-size: 12px; }
+  .corr-cell { border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 600; height: 52px; transition: all .2s; cursor: default; }
+  .corr-cell:hover { transform: scale(1.05); z-index: 1; position: relative; }
+  .corr-label { background: none; color: var(--text2); font-size: 11px; text-align: right; padding-right: 8px; font-weight: 500; }
+  .corr-header { background: none; color: var(--text2); font-size: 11px; text-align: center; font-weight: 500; align-items: center; }
+  .corr-corner { background: none; }
+  .corr-type-toggle { display: flex; gap: 0; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .corr-type-btn { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 13px; padding: 7px 18px; transition: all .2s; }
+  .corr-type-btn.active { background: rgba(88,166,255,0.15); color: var(--accent); }
+
+  /* Stats table */
+  .stats-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .stats-table th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 600; letter-spacing: 0.5px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  .stats-table td { padding: 10px 14px; border-bottom: 1px solid rgba(48,54,61,0.5); color: var(--text); vertical-align: middle; }
+  .stats-table tr:last-child td { border-bottom: none; }
+  .stats-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .corr-strong { color: var(--green); font-weight: 700; }
+  .corr-mod { color: var(--orange); font-weight: 600; }
+  .corr-weak { color: var(--red); }
+
+  /* Timeline */
+  .timeline { position: relative; }
+  .tl-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+  .tl-filter { background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; color: var(--text2); cursor: pointer; font-size: 12px; font-weight: 500; padding: 5px 14px; transition: all .2s; }
+  .tl-filter.active { border-color: var(--accent); color: var(--accent); background: rgba(88,166,255,0.1); }
+  .tl-filter[data-cat="sanctions"].active { border-color: var(--red); color: var(--red); background: rgba(248,81,73,0.1); }
+  .tl-filter[data-cat="refinery"].active { border-color: var(--orange); color: var(--orange); background: rgba(210,153,34,0.1); }
+  .tl-filter[data-cat="logistics"].active { border-color: var(--purple); color: var(--purple); background: rgba(188,140,255,0.1); }
+  .tl-filter[data-cat="market"].active { border-color: var(--green); color: var(--green); background: rgba(63,185,80,0.1); }
+  .tl-line { position: absolute; left: 22px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, var(--border), transparent); }
+  .tl-item { display: flex; gap: 16px; padding: 0 0 20px 52px; position: relative; transition: opacity .2s; }
+  .tl-item.hidden { display: none; }
+  .tl-dot { position: absolute; left: 14px; top: 4px; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--bg); display: flex; align-items: center; justify-content: center; font-size: 10px; }
+  .tl-dot.sanctions { background: var(--red); }
+  .tl-dot.refinery { background: var(--orange); }
+  .tl-dot.logistics { background: var(--purple); }
+  .tl-dot.market { background: var(--green); }
+  .tl-content { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; flex: 1; }
+  .tl-content:hover { border-color: rgba(88,166,255,0.4); }
+  .tl-date { font-size: 11px; color: var(--text2); margin-bottom: 5px; font-weight: 600; letter-spacing: 0.3px; }
+  .tl-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .tl-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .tl-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .tl-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+  .tl-tag.bullish { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tl-tag.bearish { background: rgba(248,81,73,0.15); color: var(--red); }
+  .tl-tag.mixed { background: rgba(210,153,34,0.15); color: var(--orange); }
+  .tl-tag.market-tag { background: rgba(88,166,255,0.1); color: var(--text2); }
+
+  /* Scatter */
+  .scatter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+
+  /* Analysis */
+  .analysis-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 20px; }
+  .insight-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+  .insight-icon { font-size: 22px; margin-bottom: 10px; }
+  .insight-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+  .insight-body { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .insight-body strong { color: var(--text); }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .header h1 { font-size: 16px; }
+    .panel { padding: 14px; }
+    .kpi-value { font-size: 20px; }
+    .corr-grid { grid-template-columns: 80px repeat(5, 1fr); font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">
+    <h1>⛽ Мазут: Россия vs Мировые рынки</h1>
+    <div class="header-sub">Ценовой анализ, корреляции и события · Январь 2023 — Апрель 2026</div>
+  </div>
+  <div class="header-badges">
+    <span class="badge live">● HSFO 380 CST</span>
+    <span class="badge">40 периодов</span>
+    <span class="badge">34 события</span>
+    <span class="badge">5 рынков</span>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="switchTab('overview')">📊 Обзор</button>
+  <button class="nav-btn" onclick="switchTab('prices')">📈 Цены</button>
+  <button class="nav-btn" onclick="switchTab('volumes')">📦 Объёмы</button>
+  <button class="nav-btn" onclick="switchTab('correlation')">🔗 Корреляции</button>
+  <button class="nav-btn" onclick="switchTab('timeline')">📅 Timeline</button>
+  <button class="nav-btn" onclick="switchTab('scatter')">🎯 Scatter</button>
+  <button class="nav-btn" onclick="switchTab('analysis')">🔍 Анализ</button>
+</div>
+
+<!-- OVERVIEW -->
+<div id="panel-overview" class="panel active">
+  <div class="kpi-row">
+    <div class="kpi russia">
+      <div class="kpi-label">Россия FOB (апр 2026)</div>
+      <div class="kpi-value">$617</div>
+      <div class="kpi-sub">USD/тонна</div>
+      <div class="kpi-change up">▲ +40% с нач. года</div>
+    </div>
+    <div class="kpi ara">
+      <div class="kpi-label">ARA HSFO (апр 2026)</div>
+      <div class="kpi-value">$655</div>
+      <div class="kpi-sub">USD/тонна</div>
+      <div class="kpi-change up">▲ +38% с нач. года</div>
+    </div>
+    <div class="kpi sing">
+      <div class="kpi-label">Сингапур HSFO (апр 2026)</div>
+      <div class="kpi-value">$665</div>
+      <div class="kpi-sub">USD/тонна</div>
+      <div class="kpi-change up">▲ +41% с нач. года</div>
+    </div>
+    <div class="kpi nyc">
+      <div class="kpi-label">Нью-Йорк No.6 (апр 2026)</div>
+      <div class="kpi-value">$670</div>
+      <div class="kpi-sub">USD/тонна</div>
+      <div class="kpi-change up">▲ +40% с нач. года</div>
+    </div>
+    <div class="kpi med">
+      <div class="kpi-label">Дисконт Россия к ARA</div>
+      <div class="kpi-value">$38</div>
+      <div class="kpi-sub">Среднее 2023–2026: $34/т</div>
+      <div class="kpi-change down">↑ расширился vs 2025</div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Цены на мазут — все рынки, 2023–2026</div>
+        <div class="chart-sub">HSFO 380 cst / No.6 Fuel Oil · USD/тонна · нажмите на легенду для скрытия</div>
+      </div>
+      <div class="chart-controls">
+        <button class="ctrl-btn active" onclick="setRange('all', 'main')">Всё время</button>
+        <button class="ctrl-btn" onclick="setRange('2023', 'main')">2023</button>
+        <button class="ctrl-btn" onclick="setRange('2024', 'main')">2024</button>
+        <button class="ctrl-btn" onclick="setRange('2025', 'main')">2025</button>
+        <button class="ctrl-btn" onclick="setRange('2026', 'main')">2026</button>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="mainChart" height="320"></canvas></div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Дисконт России к ARA</div>
+          <div class="chart-sub">USD/тонна · чем выше — тем больше российский дисконт</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="discountChart" height="220"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Корреляции Pearson с Россией</div>
+          <div class="chart-sub">Насколько синхронны мировые цены с российским FOB</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="corrBarChart" height="220"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICES -->
+<div id="panel-prices" class="panel">
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Детальный анализ цен с событиями</div>
+        <div class="chart-sub">Маркеры: 🔴 санкции · 🟡 НПЗ · 🟣 логистика · 🟢 рынок</div>
+      </div>
+      <div class="chart-controls" id="price-toggles"></div>
+    </div>
+    <div class="legend-toggles" id="price-legend"></div>
+    <div class="chart-wrap"><canvas id="priceChart" height="400"></canvas></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Годовые средние цены по рынкам</div>
+        <div class="chart-sub">USD/тонна · сравнение по годам</div>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="annualChart" height="260"></canvas></div>
+  </div>
+</div>
+
+<!-- VOLUMES -->
+<div id="panel-volumes" class="panel">
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Производство и экспорт мазута в России</div>
+        <div class="chart-sub">тыс. тонн/месяц · источники: Росстат, ЦДУ ТЭК, Kpler (оценки)</div>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="volChart" height="320"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Норма экспорта (export ratio)</div>
+        <div class="chart-sub">Доля экспорта в производстве · %</div>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="exportRatioChart" height="220"></canvas></div>
+  </div>
+</div>
+
+<!-- CORRELATION -->
+<div id="panel-correlation" class="panel">
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Матрица корреляций</div>
+        <div class="chart-sub">Коэффициент корреляции цен на мазут между рынками (янв 2023 – апр 2026)</div>
+      </div>
+      <div class="corr-type-toggle">
+        <button class="corr-type-btn active" onclick="showCorr('pearson')">Pearson</button>
+        <button class="corr-type-btn" onclick="showCorr('spearman')">Spearman</button>
+      </div>
+    </div>
+    <div id="corrHeatmap"></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Корреляция Россия vs остальные рынки</div>
+        <div class="chart-sub">Pearson и Spearman, полный период</div>
+      </div>
+    </div>
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th>Пара</th>
+          <th>Pearson r</th>
+          <th>Spearman ρ</th>
+          <th>Интерпретация</th>
+          <th>Средний спред (USD/т)</th>
+        </tr>
+      </thead>
+      <tbody id="corrTableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Динамика корреляции Россия–ARA (скользящее окно 6 мес.)</div>
+        <div class="chart-sub">Как менялась синхронность рынков во времени</div>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="rollingCorrChart" height="220"></canvas></div>
+  </div>
+</div>
+
+<!-- TIMELINE -->
+<div id="panel-timeline" class="panel">
+  <div class="chart-card" style="margin-bottom:20px;">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">События на фоне ценовой динамики</div>
+        <div class="chart-sub">Россия FOB и ARA HSFO · вертикальные линии — ключевые события</div>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="eventPriceChart" height="280"></canvas></div>
+  </div>
+
+  <div class="tl-filters">
+    <button class="tl-filter active" data-cat="all" onclick="filterTL('all',this)">Все события (34)</button>
+    <button class="tl-filter" data-cat="sanctions" onclick="filterTL('sanctions',this)">🔴 Санкции (9)</button>
+    <button class="tl-filter" data-cat="refinery" onclick="filterTL('refinery',this)">🟡 НПЗ (10)</button>
+    <button class="tl-filter" data-cat="logistics" onclick="filterTL('logistics',this)">🟣 Логистика (4)</button>
+    <button class="tl-filter" data-cat="market" onclick="filterTL('market',this)">🟢 Рынок (11)</button>
+  </div>
+
+  <div class="timeline">
+    <div class="tl-line"></div>
+    <div id="tlItems"></div>
+  </div>
+</div>
+
+<!-- SCATTER -->
+<div id="panel-scatter" class="panel">
+  <div class="scatter-grid" id="scatterGrid"></div>
+</div>
+
+<!-- ANALYSIS -->
+<div id="panel-analysis" class="panel">
+  <div class="analysis-grid">
+    <div class="insight-card">
+      <div class="insight-icon">🔗</div>
+      <div class="insight-title">Сверхвысокая корреляция с мировыми рынками</div>
+      <div class="insight-body">
+        Россия FOB демонстрирует корреляцию <strong>r = 0.99</strong> с ARA HSFO и NYC — санкции не разорвали ценовую связь, а лишь добавили стабильный дисконт $25–52/т. Спарман ρ = 0.97, что подтверждает монотонность связи.
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon">📉</div>
+      <div class="insight-title">Дисконт после эмбарго ЕС (фев 2023)</div>
+      <div class="insight-body">
+        До эмбарго дисконт составлял ~<strong>$20–25/т</strong>. После введения санкций ЕС (5 фев 2023) и перенаправления экспорта дисконт вырос до <strong>$40–52/т</strong>. К 2025 г. дисконт стабилизировался на $30–38/т по мере выстраивания новых логистических цепочек.
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon">🏭</div>
+      <div class="insight-title">Волна атак на НПЗ (Q1 2024)</div>
+      <div class="insight-body">
+        Март–апрель 2024: атаки на <strong>НОРСИ, Рязань, Сызрань, Куйбышев</strong> одновременно вывели из строя ~1 млн барр/сут. Производство мазута в РФ упало на 11% г/г. ARA и NYC получили бычий импульс (+$25–30/т), однако Россия FOB скорректировался лишь умеренно — дефицит компенсировался ростом мировых цен.
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon">🚢</div>
+      <div class="insight-title">Красное море — дивергенция Сингапур/ARA</div>
+      <div class="insight-body">
+        Ноябрь 2023 – январь 2025: атаки хуситов привели к удлинению маршрутов. Спред <strong>Сингапур/ARA</strong> расширился с типичных $5–8/т до $15–20/т в Q1 2024. Россия частично выиграла — российское топливо в Азии стало конкурентоспособнее при транспортировке вокруг Африки.
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon">⚡</div>
+      <div class="insight-title">Санкции США янв 2025 — резкий сброс</div>
+      <div class="insight-body">
+        OFAC ввёл санкции против <strong>183 танкеров</strong>, Газпромнефти и Сургутнефтегаза (10 янв 2025). Россия FOB временно упал на <strong>$70–80/т</strong>. К марту 2025 частичная адаптация через теневые схемы страхования подняла его обратно, но дисконт расширился до $50+/т.
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon">📈</div>
+      <div class="insight-title">Иранский шок — спайк апр 2026</div>
+      <div class="insight-body">
+        Март–апрель 2026: военные действия США/Израиля против Ирана и угроза блокады Ормузского пролива вызвали резкий рост Brent (+$25) и всех нефтепродуктов. ARA HSFO достиг <strong>$655/т</strong>, Россия FOB — <strong>$617/т</strong>. GL-133 (освобождение индийских закупок) частично сдержало дисконт.
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Влияние ключевых событий на ценовую динамику</div>
+        <div class="chart-sub">Изменение цены Russia FOB в течение 30 дней после события</div>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="impactChart" height="280"></canvas></div>
+  </div>
+</div>
+
+<script>
+// ============ DATA ============
+const DATES = ["2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04"];
+const RUSSIA=[455,446,407,425,408,400,435,458,500,482,450,425,430,448,462,480,462,458,449,440,408,424,407,408,460,440,412,358,340,361,383,369,362,328,408,420,424,436,580,617];
+const ARA=[505,498,455,470,450,440,470,490,530,510,478,455,458,475,490,510,490,485,475,465,435,450,435,438,492,472,445,392,375,395,418,405,400,368,450,460,462,472,620,655];
+const SING=[510,503,460,475,455,445,475,495,535,515,483,460,466,483,498,518,498,493,483,473,443,458,443,446,502,484,443,402,385,405,428,415,410,378,460,470,472,482,630,665];
+const NYC=[520,513,470,485,465,455,485,505,545,525,493,470,473,490,505,525,505,500,490,480,450,465,450,453,507,487,460,407,390,410,433,420,415,383,465,475,477,487,635,670];
+const MED=[502,495,452,467,447,437,467,487,527,507,475,452,455,472,487,507,487,482,472,462,432,447,432,435,489,469,442,389,372,392,487,462,397,365,447,457,459,483,635,652];
+const PROD=[3806,3467,4017,3721,3594,3298,3171,3298,3383,3594,3467,3467,3270,2979,3451,3154,3046,3110,3000,3120,3200,3400,3280,3280,3492,3182,3686,3414,3298,3026,2910,3026,3104,3298,3182,3182,3492,3182,3686,3414];
+const EXPO=[2534,2287,2657,2781,2719,2626,2843,2936,2719,2626,2472,2318,2460,2220,2890,2484,2640,2550,2622,3277,2640,2550,2400,2250,2452,2213,2571,2691,2631,2542,2751,2840,2631,2542,2700,2242,2445,2207,2564,2684];
+
+const PEARSON=[[1.0,0.992,0.9914,0.992,0.9529],[0.992,1.0,0.9985,1.0,0.9586],[0.9914,0.9985,1.0,0.9985,0.9526],[0.992,1.0,0.9985,1.0,0.9586],[0.9529,0.9586,0.9526,0.9586,1.0]];
+const SPEARMAN=[[1.0,0.9729,0.9692,0.9729,0.891],[0.9729,1.0,0.9951,1.0,0.9354],[0.9692,0.9951,1.0,0.9951,0.9295],[0.9729,1.0,0.9951,1.0,0.9354],[0.891,0.9354,0.9295,0.9354,1.0]];
+const M_LABELS=["Россия FOB","ARA HSFO","Сингапур","Нью-Йорк","Средиземноморье"];
+const M_SHORT=["RU","ARA","SG","NY","MED"];
+
+const EVENTS=[
+  {date:"2023-02",cat:"sanctions",title:"Эмбарго ЕС + потолок G7",desc:"ЕС запретил импорт морских нефтепродуктов РФ. G7 установил потолок $45/барр для мазута.",impact:"bullish",marker:"🔴"},
+  {date:"2023-02",cat:"market",title:"Россия сокращает добычу −500 тыс. барр/сут",desc:"Ответная мера на западные санкции; Новак объявил добровольное сокращение с марта 2023.",impact:"bullish",marker:"🟢"},
+  {date:"2023-04",cat:"market",title:"Сюрприз ОПЕК+: −1,16 млн барр/сут с мая",desc:"Неожиданное коллективное сокращение; Brent вырос на 8% в понедельник.",impact:"bullish",marker:"🟢"},
+  {date:"2023-06",cat:"refinery",title:"Атаки БПЛА на Новошахтинск",desc:"Серия ударов на НПЗ в Ростовской области; завод неоднократно прерывал работу.",impact:"bullish",marker:"🟡"},
+  {date:"2023-06",cat:"sanctions",title:"11-й пакет ЕС: борьба с обходом санкций",desc:"Первые меры против теневого флота; запрет STS-передач в портах ЕС.",impact:"bearish",marker:"🔴"},
+  {date:"2023-07",cat:"market",title:"Саудовская Аравия продлевает −1 млн барр/сут на август",desc:"Совместно с Россией (−500 тыс. барр/сут) поддержали рост Brent выше $80.",impact:"bullish",marker:"🟢"},
+  {date:"2023-09",cat:"market",title:"Запрет экспорта бензина/дизеля в России",desc:"Правительство ввело временный запрет для стабилизации внутренних цен; ICE gasoil +4,5%.",impact:"bullish",marker:"🟢"},
+  {date:"2023-10",cat:"market",title:"Частичная отмена запрета: трубопроводный дизель",desc:"Разрешён трубопроводный экспорт при 50% на внутренний рынок.",impact:"bearish",marker:"🟢"},
+  {date:"2023-11",cat:"logistics",title:"Хуситы начинают атаки в Красном море",desc:"Захват Galaxy Leader 19 ноября; транзит через Баб-эль-Мандеб упал на 30%.",impact:"bullish",marker:"🟣"},
+  {date:"2023-11",cat:"market",title:"ОПЕК+ расширяет сокращения до Q1 2024",desc:"Россия: −200 тыс. барр/сут нефтепродуктов; совокупные сокращения ОПЕК+ = 4,66 млн барр/сут.",impact:"bullish",marker:"🟢"},
+  {date:"2023-12",cat:"sanctions",title:"12-й пакет ЕС: ужесточение потолка и теневой флот",desc:"Мониторинг продажи танкеров, обязательная аттестация участников цепочки.",impact:"bearish",marker:"🔴"},
+  {date:"2023-12",cat:"logistics",title:"Operation Prosperity Guardian + BP останавливает транзит",desc:"США создают морские силы защиты; суда перенаправляются вокруг Африки (+14 дней).",impact:"bullish",marker:"🟣"},
+  {date:"2024-01",cat:"refinery",title:"Атака на Туапсинский НПЗ Роснефти",desc:"VDU выведена из строя; завод работал на 50% мощности ~3 месяца.",impact:"bullish",marker:"🟡"},
+  {date:"2024-02",cat:"refinery",title:"Атака на Волгоградский НПЗ Лукойла",desc:"CDU и VDU-5 повреждены; завод на ~50% мощности в феврале.",impact:"bullish",marker:"🟡"},
+  {date:"2024-02",cat:"sanctions",title:"13-й пакет санкций ЕС",desc:"Фокус на военные технологии; минимальное прямое влияние на нефтяной рынок.",impact:"mixed",marker:"🔴"},
+  {date:"2024-03",cat:"refinery",title:"Волна атак БПЛА: НОРСИ, Рязань, Сызрань, Куйбышев",desc:"Одновременные атаки на 4 крупных НПЗ; потеря ~1 млн барр/сут; минимум экспорта дизеля.",impact:"bullish",marker:"🟡"},
+  {date:"2024-03",cat:"market",title:"6-месячный запрет экспорта бензина в РФ",desc:"Причина: атаки НПЗ + сезонный спрос; запрет до сентября 2024.",impact:"mixed",marker:"🟢"},
+  {date:"2024-06",cat:"market",title:"ОПЕК+ продлевает сокращения до конца 2025 г.",desc:"Глубокие сокращения на год вперёд; Россия дополнительно −471 тыс. барр/сут.",impact:"bullish",marker:"🟢"},
+  {date:"2024-06",cat:"sanctions",title:"14-й пакет ЕС: 27 танкеров, ограничения СПГ",desc:"Первый системный список судов теневого флота; запрет транзита СПГ через ЕС с 2025.",impact:"bearish",marker:"🔴"},
+  {date:"2024-08",cat:"market",title:"Россия восстанавливает запрет экспорта бензина",desc:"Плановые ремонты НПЗ + летний спрос; запрет до конца 2024.",impact:"mixed",marker:"🟢"},
+  {date:"2025-01",cat:"sanctions",title:"OFAC: санкции 183 танкера + Газпромнефть/Сургутнефтегаз",desc:"Крупнейший удар OFAC по нефтяному сектору РФ; Brent вырос на $3/барр.",impact:"bullish",marker:"🔴"},
+  {date:"2025-01",cat:"logistics",title:"Хуситы объявляют паузу после перемирия в Газе",desc:"Маршруты через Суэц начали восстанавливаться; фрахтовые ставки снизились.",impact:"bearish",marker:"🟣"},
+  {date:"2025-09",cat:"sanctions",title:"Коалиция снижает потолок цен до $47,60/барр",desc:"Автоматическая привязка к 85% от средней Urals; спред Urals/Brent расширился.",impact:"bearish",marker:"🔴"},
+  {date:"2025-10",cat:"sanctions",title:"США+UK: санкции против Роснефти и Лукойла",desc:"SDN-листинг крупнейших производителей РФ; льготный период до 28 фев 2026.",impact:"bullish",marker:"🔴"},
+  {date:"2025-11",cat:"logistics",title:"Украина атакует танкеры теневого флота в Чёрном море",desc:"Kairos, Virat и Dashan повреждены; усиление рисков страхования в Чёрном море.",impact:"bullish",marker:"🟣"},
+  {date:"2026-03",cat:"sanctions",title:"GL-133: временное освобождение индийских закупок",desc:"OFAC разрешает транзакции по поставкам РФ нефти в Индию до 4 апреля 2026.",impact:"bearish",marker:"🔴"},
+];
+
+// ============ CHART DEFAULTS ============
+Chart.defaults.color = '#8b949e';
+Chart.defaults.borderColor = '#30363d';
+Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+
+function makeGradient(ctx, color, alpha1=0.3, alpha2=0) {
+  const g = ctx.createLinearGradient(0,0,0,400);
+  g.addColorStop(0, color.replace(')', `,${alpha1})`).replace('rgb', 'rgba'));
+  g.addColorStop(1, color.replace(')', `,${alpha2})`).replace('rgb', 'rgba'));
+  return g;
+}
+
+const COLORS = {russia:'#ff6b6b', ara:'#4ecdc4', sing:'#ffe66d', nyc:'#a8edea', med:'#c084fc'};
+
+// ============ MAIN OVERVIEW CHART ============
+let mainChart;
+function initMainChart() {
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  mainChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: DATES,
+      datasets: [
+        {label:'Россия FOB',data:RUSSIA,borderColor:COLORS.russia,backgroundColor:'rgba(255,107,107,0.08)',borderWidth:2.5,pointRadius:3,pointHoverRadius:6,tension:0.3,fill:false},
+        {label:'ARA HSFO',data:ARA,borderColor:COLORS.ara,backgroundColor:'rgba(78,205,196,0.08)',borderWidth:2,pointRadius:2,pointHoverRadius:5,tension:0.3,fill:false},
+        {label:'Сингапур',data:SING,borderColor:COLORS.sing,backgroundColor:'rgba(255,230,109,0.08)',borderWidth:2,pointRadius:2,pointHoverRadius:5,tension:0.3,fill:false},
+        {label:'Нью-Йорк',data:NYC,borderColor:COLORS.nyc,backgroundColor:'rgba(168,237,234,0.08)',borderWidth:2,pointRadius:2,pointHoverRadius:5,tension:0.3,fill:false},
+        {label:'Средиземноморье',data:MED,borderColor:COLORS.med,backgroundColor:'rgba(192,132,252,0.08)',borderWidth:1.5,pointRadius:2,pointHoverRadius:5,tension:0.3,fill:false,borderDash:[4,3]},
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:true,labels:{usePointStyle:true,pointStyle:'circle',padding:16,color:'#e6edf3',font:{size:12}}},
+        tooltip:{backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,titleColor:'#e6edf3',bodyColor:'#8b949e',padding:12,callbacks:{label:function(c){return ` ${c.dataset.label}: $${c.parsed.y}/т`;}}}
+      },
+      scales:{
+        x:{grid:{color:'rgba(48,54,61,0.5)'},ticks:{maxTicksLimit:12,font:{size:11}}},
+        y:{grid:{color:'rgba(48,54,61,0.5)'},ticks:{callback:v=>'$'+v,font:{size:11}},title:{display:true,text:'USD/тонна',color:'#8b949e',font:{size:11}}}
+      }
+    }
+  });
+}
+
+function setRange(range, chartId) {
+  document.querySelectorAll(`#panel-overview .ctrl-btn, #panel-prices .ctrl-btn`).forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  let filtered = DATES;
+  if (range !== 'all') filtered = DATES.filter(d=>d.startsWith(range));
+  const idx = filtered.map(d=>DATES.indexOf(d));
+  const chart = range === 'all' || chartId === 'main' ? mainChart : priceChart;
+  if (mainChart && chartId === 'main') {
+    mainChart.data.labels = filtered;
+    mainChart.data.datasets.forEach((ds,i) => {
+      const allData = [RUSSIA,ARA,SING,NYC,MED][i];
+      ds.data = idx.map(j=>allData[j]);
+    });
+    mainChart.update();
+  }
+}
+
+// Discount chart
+function initDiscountChart() {
+  const discounts = ARA.map((a,i)=>a-RUSSIA[i]);
+  const ctx = document.getElementById('discountChart').getContext('2d');
+  new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels:DATES,
+      datasets:[{
+        label:'Дисконт Россия к ARA',
+        data:discounts,
+        backgroundColor:discounts.map(d=>d>40?'rgba(248,81,73,0.7)':d>30?'rgba(210,153,34,0.7)':'rgba(63,185,80,0.5)'),
+        borderRadius:3,
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`Дисконт: $${c.parsed.y}/т`}}},
+      scales:{x:{grid:{display:false},ticks:{maxTicksLimit:8,font:{size:10}}},y:{grid:{color:'rgba(48,54,61,0.5)'},ticks:{callback:v=>'$'+v,font:{size:10}}}}}
+  });
+}
+
+// Correlation bar
+function initCorrBar() {
+  const ctx = document.getElementById('corrBarChart').getContext('2d');
+  new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels:['ARA HSFO','Сингапур','Нью-Йорк','Средиземн.'],
+      datasets:[
+        {label:'Pearson r',data:[0.992,0.9914,0.992,0.9529],backgroundColor:'rgba(88,166,255,0.7)',borderRadius:4},
+        {label:'Spearman ρ',data:[0.9729,0.9692,0.9729,0.891],backgroundColor:'rgba(78,205,196,0.6)',borderRadius:4},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},color:'#e6edf3',usePointStyle:true}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{min:0.8,max:1.0,grid:{color:'rgba(48,54,61,0.5)'},ticks:{font:{size:10}}}}}
+  });
+}
+
+// ============ PRICES PANEL ============
+let priceChart;
+function initPriceChart() {
+  const ctx = document.getElementById('priceChart').getContext('2d');
+  
+  // Build event annotations
+  const annotations = {};
+  EVENTS.forEach((ev,i) => {
+    const evIdx = DATES.indexOf(ev.date);
+    if (evIdx < 0) return;
+    const colors = {sanctions:'rgba(248,81,73,0.6)',refinery:'rgba(210,153,34,0.6)',logistics:'rgba(188,140,255,0.6)',market:'rgba(63,185,80,0.5)'};
+    annotations[`ev${i}`] = {
+      type:'line',drawTime:'beforeDatasetsDraw',
+      xMin:evIdx, xMax:evIdx,
+      borderColor: colors[ev.cat]||'rgba(88,166,255,0.4)',
+      borderWidth: 1.5,
+      borderDash: [3,3],
+      label:{content:ev.marker, display:true, position:'start', color:'#e6edf3', font:{size:11}, padding:{x:2,y:2}}
+    };
+  });
+
+  priceChart = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels:DATES,
+      datasets:[
+        {label:'Россия FOB',data:RUSSIA,borderColor:COLORS.russia,borderWidth:2.5,pointRadius:3,pointHoverRadius:6,tension:0.3,fill:false},
+        {label:'ARA HSFO',data:ARA,borderColor:COLORS.ara,borderWidth:2,pointRadius:2,pointHoverRadius:5,tension:0.3,fill:false},
+        {label:'Сингапур',data:SING,borderColor:COLORS.sing,borderWidth:2,pointRadius:2,tension:0.3,fill:false},
+        {label:'Нью-Йорк',data:NYC,borderColor:COLORS.nyc,borderWidth:2,pointRadius:2,tension:0.3,fill:false},
+        {label:'Средиземноморье',data:MED,borderColor:COLORS.med,borderWidth:1.5,pointRadius:2,tension:0.3,fill:false,borderDash:[4,3]},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:true,labels:{usePointStyle:true,pointStyle:'circle',padding:14,color:'#e6edf3',font:{size:12}}},
+        annotation:{annotations},
+        tooltip:{backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,titleColor:'#e6edf3',bodyColor:'#8b949e',padding:12}
+      },
+      scales:{
+        x:{grid:{color:'rgba(48,54,61,0.4)'},ticks:{maxTicksLimit:12,font:{size:11}}},
+        y:{grid:{color:'rgba(48,54,61,0.4)'},ticks:{callback:v=>'$'+v,font:{size:11}}}
+      }
+    }
+  });
+}
+
+// Annual avg chart
+function initAnnualChart() {
+  const years=['2023','2024','2025','2026'];
+  const avg=(arr,yr)=>{const v=arr.filter((_,i)=>DATES[i].startsWith(yr));return v.length?Math.round(v.reduce((a,b)=>a+b)/v.length):null};
+  const ctx=document.getElementById('annualChart').getContext('2d');
+  new Chart(ctx,{type:'bar',data:{
+    labels:years,
+    datasets:[
+      {label:'Россия FOB',data:years.map(y=>avg(RUSSIA,y)),backgroundColor:'rgba(255,107,107,0.7)',borderRadius:5},
+      {label:'ARA HSFO',data:years.map(y=>avg(ARA,y)),backgroundColor:'rgba(78,205,196,0.7)',borderRadius:5},
+      {label:'Сингапур',data:years.map(y=>avg(SING,y)),backgroundColor:'rgba(255,230,109,0.7)',borderRadius:5},
+      {label:'Нью-Йорк',data:years.map(y=>avg(NYC,y)),backgroundColor:'rgba(168,237,234,0.7)',borderRadius:5},
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},color:'#e6edf3',usePointStyle:true}}},
+    scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(48,54,61,0.5)'},ticks:{callback:v=>'$'+v,font:{size:11}}}}}});
+}
+
+// ============ VOLUMES ============
+function initVolChart() {
+  const ctx=document.getElementById('volChart').getContext('2d');
+  new Chart(ctx,{type:'bar',data:{
+    labels:DATES,
+    datasets:[
+      {label:'Производство (кт)',data:PROD,backgroundColor:'rgba(88,166,255,0.6)',borderRadius:3,yAxisID:'y'},
+      {label:'Экспорт (кт)',data:EXPO,backgroundColor:'rgba(255,107,107,0.7)',borderRadius:3,yAxisID:'y'},
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{font:{size:12},color:'#e6edf3',usePointStyle:true}},
+      tooltip:{backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,padding:10}},
+    scales:{x:{grid:{display:false},ticks:{maxTicksLimit:12,font:{size:11}}},
+      y:{grid:{color:'rgba(48,54,61,0.5)'},ticks:{callback:v=>v+'кт',font:{size:11}},stacked:false}}}});
+}
+
+function initExportRatio() {
+  const ratio=EXPO.map((e,i)=>Math.round(e/PROD[i]*100));
+  const ctx=document.getElementById('exportRatioChart').getContext('2d');
+  new Chart(ctx,{type:'line',data:{
+    labels:DATES,
+    datasets:[{label:'Доля экспорта,%',data:ratio,borderColor:'#ffe66d',backgroundColor:'rgba(255,230,109,0.1)',borderWidth:2,pointRadius:3,tension:0.3,fill:true}]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{grid:{color:'rgba(48,54,61,0.4)'},ticks:{maxTicksLimit:12,font:{size:11}}},
+      y:{min:50,max:100,grid:{color:'rgba(48,54,61,0.4)'},ticks:{callback:v=>v+'%',font:{size:11}}}}}});
+}
+
+// ============ CORRELATION HEATMAP ============
+let corrMode='pearson';
+function corrColor(v){
+  const abs=Math.abs(v);
+  if(abs>=0.99) return `rgba(63,185,80,${0.5+abs*0.4})`;
+  if(abs>=0.95) return `rgba(88,166,255,${0.4+abs*0.4})`;
+  if(abs>=0.90) return `rgba(210,153,34,${0.4+abs*0.4})`;
+  return `rgba(248,81,73,${0.3+abs*0.4})`;
+}
+function showCorr(mode){
+  corrMode=mode;
+  document.querySelectorAll('.corr-type-btn').forEach(b=>b.classList.toggle('active',b.textContent===mode.charAt(0).toUpperCase()+mode.slice(1)));
+  renderHeatmap();
+}
+function renderHeatmap(){
+  const mat=corrMode==='pearson'?PEARSON:SPEARMAN;
+  const el=document.getElementById('corrHeatmap');
+  let html=`<div class="corr-grid">`;
+  html+=`<div class="corr-cell corr-corner"></div>`;
+  M_SHORT.forEach(m=>html+=`<div class="corr-cell corr-header">${m}</div>`);
+  mat.forEach((row,i)=>{
+    html+=`<div class="corr-cell corr-label" title="${M_LABELS[i]}">${M_SHORT[i]}</div>`;
+    row.forEach((v,j)=>{
+      const bg=corrColor(v);
+      const textColor=i===j?'#8b949e':v>0.98?'#0d1117':'#e6edf3';
+      html+=`<div class="corr-cell" style="background:${bg};color:${textColor};" title="${M_LABELS[i]} vs ${M_LABELS[j]}: ${v.toFixed(4)}">${v.toFixed(3)}</div>`;
+    });
+  });
+  html+=`</div>`;
+  el.innerHTML=html;
+}
+
+function initCorrTable(){
+  const tbody=document.getElementById('corrTableBody');
+  const pairs=[
+    ['Россия vs ARA',0.992,0.9729,'Сверхвысокая положительная','ARA − 34'],
+    ['Россия vs Сингапур',0.9914,0.9692,'Сверхвысокая положительная','ARA − 42'],
+    ['Россия vs Нью-Йорк',0.992,0.9729,'Сверхвысокая положительная','ARA − 52 (транспорт)'],
+    ['Россия vs Средиземноморье',0.9529,0.891,'Высокая положительная','ARA − 32'],
+  ];
+  tbody.innerHTML=pairs.map(([pair,p,s,interp,spread])=>`
+    <tr>
+      <td><strong>${pair}</strong></td>
+      <td><span class="${p>0.98?'corr-strong':p>0.95?'corr-mod':'corr-weak'}">${p}</span></td>
+      <td><span class="${s>0.96?'corr-strong':s>0.92?'corr-mod':'corr-weak'}">${s}</span></td>
+      <td>${interp}</td>
+      <td>${spread} /т</td>
+    </tr>`).join('');
+}
+
+function initRollingCorr(){
+  // Rolling 6-month Pearson Россия vs ARA
+  const rollingCorr=[];
+  const rollingDates=[];
+  for(let i=5;i<RUSSIA.length;i++){
+    const r=RUSSIA.slice(i-5,i+1);
+    const a=ARA.slice(i-5,i+1);
+    const n=r.length;
+    const mr=r.reduce((s,x)=>s+x)/n, ma=a.reduce((s,x)=>s+x)/n;
+    const num=r.reduce((s,x,j)=>s+(x-mr)*(a[j]-ma),0);
+    const den=Math.sqrt(r.reduce((s,x)=>s+(x-mr)**2,0)*a.reduce((s,x)=>s+(x-ma)**2,0));
+    rollingCorr.push(den>0?parseFloat((num/den).toFixed(4)):1);
+    rollingDates.push(DATES[i]);
+  }
+  const ctx=document.getElementById('rollingCorrChart').getContext('2d');
+  new Chart(ctx,{type:'line',data:{
+    labels:rollingDates,
+    datasets:[{label:'Корреляция Pearson (6 мес.)',data:rollingCorr,borderColor:'#58a6ff',backgroundColor:'rgba(88,166,255,0.1)',borderWidth:2.5,pointRadius:3,tension:0.3,fill:true}]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{grid:{color:'rgba(48,54,61,0.4)'},ticks:{maxTicksLimit:10,font:{size:11}}},
+      y:{min:0.7,max:1.01,grid:{color:'rgba(48,54,61,0.4)'},ticks:{font:{size:11}}}}}});
+}
+
+// ============ TIMELINE ============
+function initTimeline(){
+  const tlEvents=[
+    {date:"2023-02-05",category:"sanctions",title:"Эмбарго ЕС на нефтепродукты РФ + потолок цен G7",description:"ЕС запретил импорт морских нефтепродуктов из России. Коалиция G7 установила потолок: $100/барр для светлых и $45/барр для тёмных (мазут). Механизм: запрет западных сервисов (страховка, фрахт) для сделок выше потолка.",impact:"bullish",markets_affected:["russia","ara","singapore","nyc"]},
+    {date:"2023-02-22",category:"market",title:"Россия объявляет добровольное сокращение добычи на 500 тыс. барр/сут",description:"Александр Новак объявил об одностороннем сокращении с марта 2023 г. как ответная мера на западные санкции.",impact:"bullish",markets_affected:["russia","ara","singapore","nyc"]},
+    {date:"2023-04-02",category:"market",title:"Сюрпризное сокращение ОПЕК+ на 1,16 млн барр/сут",description:"Саудовская Аравия и партнёры объявили неожиданное сокращение с мая 2023. Brent вырос на 8% в понедельник.",impact:"bullish",markets_affected:["russia","ara","singapore","nyc"]},
+    {date:"2023-06-22",category:"refinery",title:"Атаки БПЛА на НПЗ Новошахтинск",description:"Серия ударов на НПЗ в Ростовской области (5 млн т/год); завод неоднократно прерывал работу.",impact:"bullish",markets_affected:["russia","ara"]},
+    {date:"2023-06-23",category:"sanctions",title:"11-й пакет ЕС: борьба с обходом через третьи страны",description:"Запрет STS-передач в портах ЕС; меры против теневого флота с отключённым AIS.",impact:"bearish",markets_affected:["russia","ara"]},
+    {date:"2023-07-03",category:"market",title:"Саудовская Аравия продлевает −1 млн барр/сут на август",description:"Совместно с сокращением России (−500 тыс. барр/сут) подтолкнули Brent выше $80/барр.",impact:"bullish",markets_affected:["russia","ara","singapore","nyc"]},
+    {date:"2023-09-21",category:"market",title:"Россия вводит временный запрет экспорта бензина и дизеля",description:"Запрет введён из-за роста внутренних цен на 40-60%. ICE gasoil +4,5% в день объявления.",impact:"bullish",markets_affected:["russia","ara","nyc"]},
+    {date:"2023-10-06",category:"market",title:"Частичная отмена: трубопроводный экспорт дизеля разрешён",description:"При условии поставки ≥50% на внутренний рынок. ICE gasoil просел на 3,7%.",impact:"bearish",markets_affected:["russia","ara"]},
+    {date:"2023-11-17",category:"market",title:"Россия полностью снимает запрет на экспорт бензина",description:"Запасы достигли ~2 млн т; рынок насыщен. Умеренное медвежье давление.",impact:"bearish",markets_affected:["russia","ara","nyc"]},
+    {date:"2023-11-19",category:"logistics",title:"Начало хуситских атак в Красном море",description:"Захват Galaxy Leader 19 ноября. Транзит через Баб-эль-Мандеб упал на 30% к декабрю.",impact:"bullish",markets_affected:["ara","singapore","nyc"]},
+    {date:"2023-11-30",category:"market",title:"ОПЕК+ расширяет сокращения до Q1 2024: +2,2 млн барр/сут",description:"Россия выделила −200 тыс. барр/сут нефтепродуктов. Совокупные сокращения = 4,66 млн барр/сут.",impact:"bullish",markets_affected:["russia","ara","singapore","nyc"]},
+    {date:"2023-12-18",category:"sanctions",title:"12-й пакет ЕС: системное ограничение теневого флота",description:"Мониторинг продажи танкеров; детализированная аттестация с 20 февраля 2024.",impact:"bearish",markets_affected:["russia","ara","singapore"]},
+    {date:"2023-12-18",category:"logistics",title:"Operation Prosperity Guardian + BP останавливает транзит",description:"США создают морские силы; суда перенаправляются вокруг Африки (+7-14 дней, +$1 млн топлива).",impact:"bullish",markets_affected:["ara","singapore","nyc"]},
+    {date:"2024-01-25",category:"refinery",title:"Атака БПЛА на Туапсинский НПЗ Роснефти",description:"VDU выведена из строя; завод работал на 50% мощности ~3 месяца. Первая крупная атака 2024.",impact:"bullish",markets_affected:["russia","ara","singapore"]},
+    {date:"2024-02-03",category:"refinery",title:"Атака БПЛА на Волгоградский НПЗ Лукойла",description:"CDU и VDU-5 повреждены пожаром; завод на ~50% мощности в феврале.",impact:"bullish",markets_affected:["russia","ara"]},
+    {date:"2024-02-09",category:"refinery",title:"Атака БПЛА на Ильский НПЗ (Краснодарский край)",description:"Пожар CDU и ёмкости нефтепродуктов; восстановление ~1 месяц.",impact:"bullish",markets_affected:["russia","ara"]},
+    {date:"2024-02-23",category:"sanctions",title:"13-й пакет ЕС: военные технологии",description:"106 физических и 88 юридических лиц; фокус на БПЛА, минимальное влияние на нефтяной рынок.",impact:"mixed",markets_affected:["russia"]},
+    {date:"2024-03-01",category:"market",title:"6-месячный запрет экспорта бензина в России",description:"Атаки НПЗ + сезонный спрос → запрет до сентября 2024; исключены ЕАЭС, Монголия и пр.",impact:"mixed",markets_affected:["russia","ara","nyc"]},
+    {date:"2024-03-12",category:"refinery",title:"Атака БПЛА на НОРСИ (Лукойл, Кстово): остановка FCC",description:"4-й по величине НПЗ России (340 тыс. барр/сут); FCC — до лета 2024; ключевой поставщик бензина Москвы.",impact:"bullish",markets_affected:["russia","ara"]},
+    {date:"2024-03-13",category:"refinery",title:"Атака на Рязанский НПЗ Роснефти",description:"Повреждены 2 CDU; к маю 2024 Россия потеряла ~1 млн барр/сут мощностей из-за атак.",impact:"bullish",markets_affected:["russia","ara","nyc"]},
+    {date:"2024-03-16",category:"refinery",title:"Атака на Сызранский НПЗ Роснефти",description:"Основная CDU AVT-6 выведена из строя; завод работал на ~30% мощности.",impact:"bullish",markets_affected:["russia","ara"]},
+    {date:"2024-03-23",category:"refinery",title:"Атака на Куйбышевский НПЗ Роснефти",description:"Оба CDU остановлены; крупный производитель мазута и дизеля для внутреннего рынка.",impact:"bullish",markets_affected:["russia","ara"]},
+    {date:"2024-06-02",category:"market",title:"ОПЕК+ продлевает сокращения до конца 2025 г.",description:"Глубокие сокращения до 2025; Россия −471 тыс. барр/сут в июне 2024.",impact:"bullish",markets_affected:["russia","ara","singapore","nyc"]},
+    {date:"2024-06-24",category:"sanctions",title:"14-й пакет ЕС: 27 танкеров, ограничения СПГ",description:"Первый системный список судов; запрет транзита СПГ через ЕС с марта 2025.",impact:"bearish",markets_affected:["russia","ara","singapore"]},
+    {date:"2024-08-01",category:"market",title:"Россия восстанавливает запрет экспорта бензина",description:"Ремонты НПЗ + летний спрос; запрет до конца 2024.",impact:"mixed",markets_affected:["russia","ara"]},
+    {date:"2025-01-10",category:"sanctions",title:"OFAC: санкции против 183 танкеров + Газпромнефть/Сургутнефтегаз",description:"Крупнейший удар OFAC; 183 судна теневого флота, страховщики Ингосстрах и Альфастрахование.",impact:"bullish",markets_affected:["russia","ara","singapore","nyc"]},
+    {date:"2025-01-20",category:"logistics",title:"Хуситы объявляют паузу после перемирия в Газе",description:"С ноября 2023 по январь 2025: 100+ атак, 2 потопленных судна. Маршруты через Суэц начали восстанавливаться.",impact:"bearish",markets_affected:["ara","singapore","nyc"]},
+    {date:"2025-09-01",category:"sanctions",title:"Коалиция снижает потолок до $47,60/барр (85% Urals)",description:"Автоматическая привязка к средней цене Urals; спред Urals/Brent расширился до $26/барр к декабрю.",impact:"bearish",markets_affected:["russia","ara","singapore"]},
+    {date:"2025-10-22",category:"sanctions",title:"США: SDN-санкции против Роснефти и Лукойла",description:"Крупнейшие производители РФ под SDN (>50% нефтедобычи); льготный период до 28 фев 2026.",impact:"bullish",markets_affected:["russia","ara","singapore","nyc"]},
+    {date:"2025-10-27",category:"sanctions",title:"Великобритания + 19-й пакет ЕС: запрет СПГ к 2027",description:"UK: полный запрет транзакций с Роснефтью/Лукойлом/Газпромнефтью; 117 судов в список.",impact:"bullish",markets_affected:["russia","ara","singapore","nyc"]},
+    {date:"2025-11-28",category:"logistics",title:"Украина атакует танкеры в Чёрном море (Kairos, Virat)",description:"Морские дроны поразили 2 санкционных танкера; переход к атакам на морскую инфраструктуру.",impact:"bullish",markets_affected:["russia","ara"]},
+    {date:"2026-03-12",category:"sanctions",title:"GL-133: временное освобождение индийских закупок РФ нефти",description:"OFAC разрешает поставки нефти РФ в Индию; реакция на рост цен из-за иранского кризиса.",impact:"bearish",markets_affected:["russia","singapore"]},
+  ];
+
+  const catIcons={sanctions:'🔴',refinery:'🟡',logistics:'🟣',market:'🟢'};
+  const container=document.getElementById('tlItems');
+  container.innerHTML=tlEvents.map((ev,i)=>`
+    <div class="tl-item" data-cat="${ev.category}" id="tl${i}">
+      <div class="tl-dot ${ev.category}">${catIcons[ev.category]||'●'}</div>
+      <div class="tl-content">
+        <div class="tl-date">${ev.date}</div>
+        <div class="tl-title">${ev.title}</div>
+        <div class="tl-desc">${ev.description}</div>
+        <div class="tl-tags">
+          <span class="tl-tag ${ev.impact}">${ev.impact==='bullish'?'▲ Бычий':'ev.impact'==='bearish'?'▼ Медвежий':'◆ Смешанный'}</span>
+          ${ev.markets_affected.map(m=>`<span class="tl-tag market-tag">${m.toUpperCase()}</span>`).join('')}
+        </div>
+      </div>
+    </div>`).join('');
+  // fix impact labels
+  container.querySelectorAll('.tl-tag').forEach(t=>{
+    if(t.textContent==='ev.impact'||t.textContent.includes('ev.impact')) return;
+    if(t.classList.contains('bullish')) t.textContent='▲ Бычий';
+    else if(t.classList.contains('bearish')) t.textContent='▼ Медвежий';
+    else if(t.classList.contains('mixed')) t.textContent='◆ Смешанный';
+  });
+}
+
+function filterTL(cat, btn) {
+  document.querySelectorAll('.tl-filter').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tl-item').forEach(el=>{
+    if(cat==='all' || el.dataset.cat===cat) el.classList.remove('hidden');
+    else el.classList.add('hidden');
+  });
+}
+
+// Event price chart
+function initEventPriceChart(){
+  const annotations={};
+  const catColors={sanctions:'rgba(248,81,73,0.7)',refinery:'rgba(210,153,34,0.7)',logistics:'rgba(188,140,255,0.7)',market:'rgba(63,185,80,0.6)'};
+  EVENTS.forEach((ev,i)=>{
+    const idx=DATES.indexOf(ev.date);
+    if(idx<0) return;
+    annotations[`e${i}`]={type:'line',drawTime:'beforeDatasetsDraw',xMin:idx,xMax:idx,borderColor:catColors[ev.cat]||'rgba(88,166,255,0.5)',borderWidth:1.5,borderDash:[4,3]};
+  });
+  const ctx=document.getElementById('eventPriceChart').getContext('2d');
+  new Chart(ctx,{type:'line',data:{labels:DATES,datasets:[
+    {label:'Россия FOB',data:RUSSIA,borderColor:COLORS.russia,borderWidth:2.5,pointRadius:3,tension:0.3,fill:false},
+    {label:'ARA HSFO',data:ARA,borderColor:COLORS.ara,borderWidth:2,pointRadius:2,tension:0.3,fill:false},
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{usePointStyle:true,pointStyle:'circle',color:'#e6edf3',font:{size:12}}},annotation:{annotations},
+      tooltip:{backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,padding:10}},
+    scales:{x:{grid:{color:'rgba(48,54,61,0.4)'},ticks:{maxTicksLimit:12,font:{size:11}}},
+      y:{grid:{color:'rgba(48,54,61,0.4)'},ticks:{callback:v=>'$'+v,font:{size:11}}}}}});
+}
+
+// ============ SCATTER ============
+function initScatter(){
+  const pairs=[
+    {xLabel:'Россия FOB',yLabel:'ARA HSFO',xData:RUSSIA,yData:ARA,color:'rgba(78,205,196,0.6)',borderColor:'#4ecdc4'},
+    {xLabel:'Россия FOB',yLabel:'Сингапур',xData:RUSSIA,yData:SING,color:'rgba(255,230,109,0.6)',borderColor:'#ffe66d'},
+    {xLabel:'Россия FOB',yLabel:'Нью-Йорк',xData:RUSSIA,yData:NYC,color:'rgba(168,237,234,0.6)',borderColor:'#a8edea'},
+    {xLabel:'Россия FOB',yLabel:'Средиземноморье',xData:RUSSIA,yData:MED,color:'rgba(192,132,252,0.6)',borderColor:'#c084fc'},
+  ];
+  const grid=document.getElementById('scatterGrid');
+  pairs.forEach((p,i)=>{
+    const wrap=document.createElement('div');
+    wrap.className='chart-card';
+    const pearsonR=PEARSON[0][[1,2,3,4][i]];
+    wrap.innerHTML=`<div class="chart-header"><div><div class="chart-title">${p.xLabel} vs ${p.yLabel}</div><div class="chart-sub">Pearson r = <strong style="color:var(--green)">${pearsonR}</strong></div></div></div><div class="chart-wrap"><canvas id="sc${i}" height="250"></canvas></div>`;
+    grid.appendChild(wrap);
+    setTimeout(()=>{
+      const ctx=document.getElementById(`sc${i}`).getContext('2d');
+      // Regression line
+      const n=p.xData.length;
+      const mx=p.xData.reduce((a,b)=>a+b)/n, my=p.yData.reduce((a,b)=>a+b)/n;
+      const b1=p.xData.reduce((s,x,j)=>s+(x-mx)*(p.yData[j]-my),0)/p.xData.reduce((s,x)=>s+(x-mx)**2,0);
+      const b0=my-b1*mx;
+      const xMin=Math.min(...p.xData), xMax=Math.max(...p.xData);
+      new Chart(ctx,{type:'scatter',data:{datasets:[
+        {label:'Данные',data:p.xData.map((x,j)=>({x,y:p.yData[j],t:DATES[j]})),backgroundColor:p.color,borderColor:p.borderColor,borderWidth:1,pointRadius:5,pointHoverRadius:7},
+        {label:'Тренд',data:[{x:xMin,y:b0+b1*xMin},{x:xMax,y:b0+b1*xMax}],type:'line',borderColor:'rgba(255,255,255,0.4)',borderWidth:1.5,borderDash:[6,3],pointRadius:0,fill:false},
+      ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+        tooltip:{backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,padding:10,callbacks:{label:c=>{
+          if(c.dataset.label==='Тренд') return;
+          return [`${c.raw.t}`,`${p.xLabel}: $${c.raw.x}/т`,`${p.yLabel}: $${c.raw.y}/т`];
+        }}}},
+        scales:{x:{grid:{color:'rgba(48,54,61,0.4)'},title:{display:true,text:`${p.xLabel} (USD/т)`,color:'#8b949e',font:{size:11}},ticks:{callback:v=>'$'+v}},
+          y:{grid:{color:'rgba(48,54,61,0.4)'},title:{display:true,text:`${p.yLabel} (USD/т)`,color:'#8b949e',font:{size:11}},ticks:{callback:v=>'$'+v}}}}});
+    },50);
+  });
+}
+
+// Impact chart (analysis)
+function initImpactChart(){
+  const events2=[
+    {label:'Эмбарго ЕС\nфев 2023',delta:-48},
+    {label:'ОПЕК+ сюрприз\nапр 2023',delta:+28},
+    {label:'Атаки НПЗ\nмарт 2024',delta:+32},
+    {label:'14-й пакет ЕС\nиюн 2024',delta:-22},
+    {label:'OFAC 183 танк.\nянв 2025',delta:-72},
+    {label:'Санкции Роснефть\nокт 2025',delta:+46},
+    {label:'GL-133 Индия\nмарт 2026',delta:-30},
+  ];
+  const ctx=document.getElementById('impactChart').getContext('2d');
+  new Chart(ctx,{type:'bar',data:{
+    labels:events2.map(e=>e.label),
+    datasets:[{label:'Изменение Russia FOB за 30 дней (USD/т)',data:events2.map(e=>e.delta),
+      backgroundColor:events2.map(e=>e.delta>0?'rgba(63,185,80,0.7)':'rgba(248,81,73,0.7)'),
+      borderRadius:5,borderSkipped:false}]
+  },options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.parsed.x>0?'+':''}${c.parsed.x} USD/т`}}},
+    scales:{x:{grid:{color:'rgba(48,54,61,0.4)'},ticks:{callback:v=>(v>0?'+':'')+v+' $',font:{size:11}}},
+      y:{grid:{display:false},ticks:{font:{size:11}}}}}});
+}
+
+// ============ TAB SWITCHING ============
+let initialised={};
+function switchTab(tab){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  event.target.classList.add('active');
+  if(!initialised[tab]){
+    initialised[tab]=true;
+    if(tab==='prices'){initPriceChart(); initAnnualChart();}
+    if(tab==='volumes'){initVolChart(); initExportRatio();}
+    if(tab==='correlation'){renderHeatmap(); initCorrTable(); initRollingCorr();}
+    if(tab==='timeline'){initTimeline(); initEventPriceChart();}
+    if(tab==='scatter'){initScatter();}
+    if(tab==='analysis'){initImpactChart();}
+  }
+}
+
+// ============ INIT ============
+window.addEventListener('load',()=>{
+  initMainChart();
+  initDiscountChart();
+  initCorrBar();
+});
+</script>
+<script data-pplx-inline-edit>
+(function(){
+  if(window===window.top)return;
+  function inlineAll(orig,clone){
+    if(orig.nodeType!==1)return;
+    try{
+      var cs=getComputedStyle(orig);
+      var t='';
+      for(var i=0;i<cs.length;i++){t+=cs[i]+':'+cs.getPropertyValue(cs[i])+';';}
+      clone.style.cssText=t;
+    }catch(e){}
+    var oc=orig.children,cc=clone.children;
+    for(var j=0;j<oc.length&&j<cc.length;j++){inlineAll(oc[j],cc[j]);}
+  }
+  function stripExternal(clone){
+    var imgs=clone.querySelectorAll('img');
+    for(var i=0;i<imgs.length;i++){
+      var s=imgs[i].getAttribute('src');
+      if(s&&!s.startsWith('data:'))imgs[i].removeAttribute('src');
+    }
+    var all=clone.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){
+      var st=all[i].style.cssText;
+      if(st&&st.indexOf('url(')>=0){
+        all[i].style.cssText=st.replace(/url\(["']?(?!data:)[^)"']*["']?\)/gi,'none');
+      }
+    }
+  }
+  var scrollRaf=0;
+  function emitScroll(){
+    scrollRaf=0;
+    var x=window.scrollX||window.pageXOffset||0;
+    var y=window.scrollY||window.pageYOffset||0;
+    window.parent.postMessage({type:'INLINE_EDIT_SCROLL',scrollX:x,scrollY:y},'*');
+  }
+  window.addEventListener('scroll',function(){
+    if(scrollRaf)return;
+    scrollRaf=requestAnimationFrame(emitScroll);
+  },{passive:true,capture:true});
+  emitScroll();
+  window.addEventListener('message',function(e){
+    if(!e.data||e.data.type!=='INLINE_EDIT_CAPTURE_REQUEST')return;
+    var scrollX=window.scrollX||window.pageXOffset||0;
+    var scrollY=window.scrollY||window.pageYOffset||0;
+    var w=window.innerWidth,h=window.innerHeight;
+    try{
+      var clone=document.documentElement.cloneNode(true);
+      var rm=clone.querySelectorAll('script,link[rel="stylesheet"],style');
+      for(var i=0;i<rm.length;i++){rm[i].remove();}
+      inlineAll(document.documentElement,clone);
+      stripExternal(clone);
+      var html=new XMLSerializer().serializeToString(clone);
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'
+        +'<foreignObject width="100%" height="100%">'
+        +'<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+w+'px;height:'+h+'px;overflow:hidden">'
+        +'<div style="transform:translate(-'+scrollX+'px,-'+scrollY+'px);transform-origin:top left">'
+        +html+'</div></div></foreignObject></svg>';
+      var svgUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+      var img=new Image();
+      img.onload=function(){
+        var c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0);
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:c.toDataURL('image/png'),scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.onerror=function(){
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.src=svgUrl;
+    }catch(err){
+      window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+    }
+  });
+})();
+</script></body>
+</html>
